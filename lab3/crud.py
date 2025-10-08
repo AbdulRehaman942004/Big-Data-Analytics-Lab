@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 # ------------------------------
-# Load environment variables
+# Loading environment variables
 # ------------------------------
 load_dotenv()
 
@@ -13,7 +13,7 @@ MONGO_URI = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 DB_NAME = os.getenv("MONGODB_DATABASE", "crud_app")
 COLLECTION_NAME = os.getenv("MONGODB_COLLECTION", "users")
 
-# Connect to MongoDB
+# Connecting to MongoDB
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 collection = db[COLLECTION_NAME]
