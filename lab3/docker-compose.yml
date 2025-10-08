@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  crud_app:
+    build: .
+    container_name: crud_app
+    depends_on:
+      - mongo
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017
+      - MONGODB_DATABASE=crud_app
+      - MONGODB_COLLECTION=users
+    volumes:
+      - .:/app
+
+volumes:
+  mongo_data:
