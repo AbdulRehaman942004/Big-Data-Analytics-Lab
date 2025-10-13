@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Adobe-compatible data storage using Redis (simulating Adobe's data patterns)
+  adobe-data-store:
+    image: redis:7-alpine
+    container_name: adobe_sdfs_store
+    ports:
+      - "6379:6379"
+    volumes:
+      - adobe_data:/data
+    command: redis-server --appendonly yes
+
+  # Adobe Experience Platform simulation service
+  adobe-aep-simulator:
+    image: node:18-alpine
+    container_name: adobe_aep_simulator
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./adobe-simulator:/app
+    working_dir: /app
+    command: sh -c "npm install && node server.js"
+
+  crud_app:
+    build: .
+    container_name: adobe_crud_app
+    depends_on:
+      - adobe-data-store
+      - adobe-aep-simulator
+    environment:
+      - ADOBE_DATA_STORE_URL=redis://adobe-data-store:6379
+      - ADOBE_AEP_URL=http://adobe-aep-simulator:3000
+      - ADOBE_NAMESPACE=crud_app
+    volumes:
+      - .:/app
+
+volumes:
+  adobe_data:
