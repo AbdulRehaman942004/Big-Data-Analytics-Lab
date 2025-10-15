@@ -4,11 +4,11 @@ FROM python:3.10
 # Set working directory
 WORKDIR /app
 
-# Copy files
-COPY . .
+# Copy the main.py file
+COPY main.py .
 
-# Install dependencies
-RUN pip install -r requirements.txt
+# Create storage directory
+RUN mkdir -p adobe_sdfs_storage
 
-# Run the script
-CMD ["python", "crud.py"]
+# Run the application
+CMD ["python", "main.py"]
