@@ -1,0 +1,20 @@
+services:
+  hdfs:
+    build: .
+    container_name: HDFS
+    volumes:
+      - hdfs_storage:/app/hdfs_storage
+    stdin_open: true
+    tty: true
+
+  parquet:
+    build: .
+    container_name: parquet_app
+    volumes:
+      - .:/app
+      - hdfs_storage:/app/hdfs_storage
+    stdin_open: true
+    tty: true
+
+volumes:
+  hdfs_storage:
