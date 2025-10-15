@@ -1,12 +1,12 @@
 services:
-  # Adobe SDFS Application
-  adobe:
+  # HDFS-like Application
+  hdfs:
     build: .
-    container_name: Adobe
+    container_name: HDFS
     volumes:
-      - adobe_sdfs_storage:/app/adobe_sdfs_storage
+      - hdfs_storage:/app/hdfs_storage
     stdin_open: true
     tty: true
 
 volumes:
-  adobe_sdfs_storage:
+  hdfs_storage:

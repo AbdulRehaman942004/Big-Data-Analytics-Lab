@@ -8,7 +8,7 @@ WORKDIR /app
 COPY main.py .
 
 # Create storage directory
-RUN mkdir -p adobe_sdfs_storage
+RUN mkdir -p hdfs_storage
 
 # Run the application
 CMD ["python", "main.py"]
