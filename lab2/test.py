@@ -1,3 +1,6 @@
+# making connection to the database and testing if it is working
+# using postgresql, mongodb, and elasticsearch (all are running locally on docker)
+
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
