@@ -9,6 +9,7 @@ HDFS_USER = "root"
 HDFS_DIR = "/user/root"
 LOCAL_FILE = "example.txt"
 SPARK_MASTER = os.getenv("SPARK_MASTER", "local[*]")
+PARQUET_BASE_DIR = os.getenv("PARQUET_BASE_DIR", "/tmp/spark_parquet")
 
 print("Waiting for HDFS and Spark to be ready...")
 time.sleep(30)
@@ -115,12 +116,16 @@ try:
         StructField("age", IntegerType(), True)
     ])
     
-    # Create DataFrame
+    # Create DataFrame and persist to Parquet
     employees_df = spark.createDataFrame(employees_data, schema=employees_schema)
-    
-    # Create temporary view for SQL queries
-    employees_df.createOrReplaceTempView("employees")
-    print("Employees table created with 10 records")
+    os.makedirs(PARQUET_BASE_DIR, exist_ok=True)
+    employees_parquet_path = os.path.join(PARQUET_BASE_DIR, "employees")
+    print(f"Writing employees dataset to Parquet at {employees_parquet_path} ...")
+    employees_df.write.mode("overwrite").parquet(employees_parquet_path)
+    print("Employees dataset written to Parquet successfully.")
+    employees_parquet_df = spark.read.parquet(employees_parquet_path)
+    employees_parquet_df.createOrReplaceTempView("employees")
+    print("Employees table loaded from Parquet with 10 records")
 
     # ============================================
     # Create Dummy Data - Products Table
@@ -149,53 +154,40 @@ try:
     ])
     
     products_df = spark.createDataFrame(products_data, schema=products_schema)
-    products_df.createOrReplaceTempView("products")
-    print("Products table created with 10 records")
+    products_parquet_path = os.path.join(PARQUET_BASE_DIR, "products")
+    print(f"Writing products dataset to Parquet at {products_parquet_path} ...")
+    products_df.write.mode("overwrite").parquet(products_parquet_path)
+    print("Products dataset written to Parquet successfully.")
+    products_parquet_df = spark.read.parquet(products_parquet_path)
+    products_parquet_df.createOrReplaceTempView("products")
+    print("Products table loaded from Parquet with 10 records")
 
     # ============================================
-    # Query 1: Display All Employees
+    # Query 1: Employees by Department
     # ============================================
     print("\n" + "-"*60)
-    print("QUERY 1: Display All Employees")
+    print("QUERY 1: Employees Grouped by Department")
     print("-"*60)
-    query1 = spark.sql("SELECT * FROM employees ORDER BY employee_id")
-    query1.show(truncate=False)
-
-    # ============================================
-    # Query 2: Display All Products
-    # ============================================
-    print("\n" + "-"*60)
-    print("QUERY 2: Display All Products")
-    print("-"*60)
-    query2 = spark.sql("SELECT * FROM products ORDER BY product_id")
-    query2.show(truncate=False)
-
-    # ============================================
-    # Query 3: Employees by Department
-    # ============================================
-    print("\n" + "-"*60)
-    print("QUERY 3: Employees Grouped by Department")
-    print("-"*60)
-    query3 = spark.sql("""
+    query1 = spark.sql("""
         SELECT 
             department,
             COUNT(*) as employee_count,
-            AVG(salary) as avg_salary,
+            ROUND(AVG(salary), 2) as avg_salary,
             MAX(salary) as max_salary,
             MIN(salary) as min_salary
         FROM employees
         GROUP BY department
         ORDER BY employee_count DESC
     """)
-    query3.show(truncate=False)
+    query1.show(truncate=False)
 
     # ============================================
-    # Query 4: High Salary Employees
+    # Query 2: High Salary Employees
     # ============================================
     print("\n" + "-"*60)
-    print("QUERY 4: Employees with Salary > 75000")
+    print("QUERY 2: Employees with Salary > 75000")
     print("-"*60)
-    query4 = spark.sql("""
+    query2 = spark.sql("""
         SELECT 
             employee_id,
             name,
@@ -206,51 +198,15 @@ try:
         WHERE salary > 75000
         ORDER BY salary DESC
     """)
-    query4.show(truncate=False)
+    query2.show(truncate=False)
 
     # ============================================
-    # Query 5: Products by Category
+    # Query 3: Products with Low Stock
     # ============================================
     print("\n" + "-"*60)
-    print("QUERY 5: Products Grouped by Category")
+    print("QUERY 3: Products with Stock < 100")
     print("-"*60)
-    query5 = spark.sql("""
-        SELECT 
-            category,
-            COUNT(*) as product_count,
-            AVG(price) as avg_price,
-            SUM(stock_quantity) as total_stock
-        FROM products
-        GROUP BY category
-        ORDER BY product_count DESC
-    """)
-    query5.show(truncate=False)
-
-    # ============================================
-    # Query 6: Top 5 Highest Paid Employees
-    # ============================================
-    print("\n" + "-"*60)
-    print("QUERY 6: Top 5 Highest Paid Employees")
-    print("-"*60)
-    query6 = spark.sql("""
-        SELECT 
-            name,
-            department,
-            salary,
-            age
-        FROM employees
-        ORDER BY salary DESC
-        LIMIT 5
-    """)
-    query6.show(truncate=False)
-
-    # ============================================
-    # Query 7: Products with Low Stock
-    # ============================================
-    print("\n" + "-"*60)
-    print("QUERY 7: Products with Stock < 100")
-    print("-"*60)
-    query7 = spark.sql("""
+    query3 = spark.sql("""
         SELECT 
             product_id,
             product_name,
@@ -261,7 +217,7 @@ try:
         WHERE stock_quantity < 100
         ORDER BY stock_quantity ASC
     """)
-    query7.show(truncate=False)
+    query3.show(truncate=False)
 
     # ============================================
     # Display DataFrame Info
@@ -270,12 +226,12 @@ try:
     print("DATAFRAME INFORMATION")
     print("-"*60)
     print("\nEmployees DataFrame Schema:")
-    employees_df.printSchema()
-    print(f"\nEmployees DataFrame Count: {employees_df.count()}")
+    employees_parquet_df.printSchema()
+    print(f"\nEmployees DataFrame Count: {employees_parquet_df.count()}")
     
     print("\nProducts DataFrame Schema:")
-    products_df.printSchema()
-    print(f"\nProducts DataFrame Count: {products_df.count()}")
+    products_parquet_df.printSchema()
+    print(f"\nProducts DataFrame Count: {products_parquet_df.count()}")
 
     print("\nAll Spark SQL operations completed successfully!")
 
